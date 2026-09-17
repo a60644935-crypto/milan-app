@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: milan-app
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
