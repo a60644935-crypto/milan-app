@@ -52,6 +52,16 @@ let selectedProfileName = '';
 let selectedPaymentType = 'Milan Plus';
 let selectedCompanion = { name: 'Isha', interest: 'painting and meaningful conversations' };
 
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Server request failed.');
+  return data;
+}
+
 function addNotification(name, text) {
   const savedNotifications = JSON.parse(localStorage.getItem('milan-notifications') || '[]');
   savedNotifications.unshift({ name, text });
@@ -264,7 +274,7 @@ document.querySelector('[data-copy-upi]').addEventListener('click', async (event
   await navigator.clipboard.writeText('mohd92810-2@oksbi');
   event.currentTarget.textContent = 'Copied ✓';
 });
-utrForm.addEventListener('submit', (event) => {
+utrForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const utr = utrInput.value.trim();
   const screenshot = paymentScreenshot.files[0];
@@ -276,20 +286,34 @@ utrForm.addEventListener('submit', (event) => {
   }
   const submitButton = event.currentTarget.querySelector('button[type="submit"]');
   const reader = new FileReader();
-  reader.addEventListener('load', () => {
-    const payment = {
-      type: selectedPaymentType,
-      utr,
-      screenshot: reader.result,
-      submittedAt: new Date().toISOString(),
-      status: 'pending',
-    };
-    localStorage.setItem('milan-pending-payment', JSON.stringify(payment));
-    utrStatus.textContent = 'Payment submitted for admin approval. Access will unlock after verification.';
-    utrStatus.classList.add('is-visible');
-    paymentScreenshot.disabled = true;
-    utrInput.disabled = true;
-    submitButton.disabled = true;
+  submitButton.disabled = true;
+  reader.addEventListener('load', async () => {
+    const profile = JSON.parse(localStorage.getItem('milan-profile') || 'null');
+    try {
+      await apiRequest('/api/payments', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: profile?.email || '',
+          planType: selectedPaymentType,
+          utr,
+          screenshot: reader.result,
+        }),
+      });
+      localStorage.setItem('milan-pending-payment', JSON.stringify({
+        type: selectedPaymentType,
+        utr,
+        submittedAt: new Date().toISOString(),
+        status: 'pending',
+      }));
+      utrStatus.textContent = 'Payment submitted for admin approval. Access will unlock after verification.';
+      utrStatus.classList.add('is-visible');
+      paymentScreenshot.disabled = true;
+      utrInput.disabled = true;
+    } catch (error) {
+      utrStatus.textContent = error.message;
+      utrStatus.classList.add('is-visible');
+      submitButton.disabled = false;
+    }
   });
   reader.readAsDataURL(screenshot);
 });
@@ -556,14 +580,29 @@ signupForm.querySelector('select').addEventListener('keydown', (event) => {
   }
 });
 
-loginForm.addEventListener('submit', (event) => {
+loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const status = event.currentTarget.querySelector('[data-login-status]');
   const submit = event.currentTarget.querySelector('.modal-submit');
-  submit.innerHTML = 'Logged in <span>✓</span>';
   submit.disabled = true;
-  status.textContent = 'Demo login successful. Your Milan dashboard will open after account backend is connected.';
-  status.classList.add('is-visible');
+  const email = loginForm.querySelector('input[type="email"]').value.trim();
+  try {
+    const profile = JSON.parse(localStorage.getItem('milan-profile') || 'null');
+    if (profile?.email?.toLowerCase() === email.toLowerCase()) {
+      await apiRequest('/api/users/track', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      });
+    }
+    localStorage.setItem('milan-authenticated', 'true');
+    submit.innerHTML = 'Logged in <span>✓</span>';
+    status.textContent = 'Welcome back. Your activity has been saved securely.';
+    status.classList.add('is-visible');
+  } catch (error) {
+    status.textContent = error.message;
+    status.classList.add('is-visible');
+    submit.disabled = false;
+  }
 });
 signupForm.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -580,22 +619,31 @@ signupForm.addEventListener('submit', (event) => {
   const existingIndex = profiles.findIndex((item) => item.email.toLowerCase() === email.toLowerCase());
   if (existingIndex >= 0) profiles[existingIndex] = profile;
   else profiles.push(profile);
-  localStorage.setItem('milan-profiles', JSON.stringify(profiles));
-  localStorage.setItem('milan-profile', JSON.stringify(profile));
-  localStorage.setItem('milan-authenticated', 'true');
-  showProfile(profile);
-  renderUserProfiles();
   const submit = event.currentTarget.querySelector('.modal-submit');
   const status = event.currentTarget.querySelector('[data-signup-status]');
-  submit.innerHTML = 'You’re on the list <span>✓</span>';
   submit.disabled = true;
-  status.textContent = 'Profile started successfully! We will use this email for your Milan welcome link.';
-  status.classList.add('is-visible');
-  window.setTimeout(() => {
-    setModal(false);
-    window.location.hash = '#home';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, 700);
+  apiRequest('/api/users/track', {
+    method: 'POST',
+    body: JSON.stringify({ email, name, age, location, interest }),
+  }).then(() => {
+    localStorage.setItem('milan-profiles', JSON.stringify(profiles));
+    localStorage.setItem('milan-profile', JSON.stringify(profile));
+    localStorage.setItem('milan-authenticated', 'true');
+    showProfile(profile);
+    renderUserProfiles();
+    submit.innerHTML = 'You’re on the list <span>✓</span>';
+    status.textContent = 'Profile started successfully! Your activity is now securely tracked.';
+    status.classList.add('is-visible');
+    window.setTimeout(() => {
+      setModal(false);
+      window.location.hash = '#home';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 700);
+  }).catch((error) => {
+    status.textContent = error.message;
+    status.classList.add('is-visible');
+    submit.disabled = false;
+  });
 });
 
 memberSearch.addEventListener('input', (event) => {

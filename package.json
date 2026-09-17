@@ -5,7 +5,8 @@
   "description": "Milan community app",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "validate": "node --check server.js && node --check script.js && node --check admin.js"
   },
   "engines": {
     "node": ">=20"

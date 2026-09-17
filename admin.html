@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Milan Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <main class="admin-shell">
+    <section class="admin-login" data-login-view>
+      <a class="admin-logo" href="/"><span></span>milan</a>
+      <div class="panel-card login-card">
+        <p class="eyebrow">Restricted area</p>
+        <h1>Admin <em>sign in.</em></h1>
+        <p class="muted">Review member activity and verify payment submissions securely.</p>
+        <form data-admin-login>
+          <label>Email address<input type="email" name="email" value="aslamonline4590@gmail.com" autocomplete="username" required></label>
+          <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+          <button class="button" type="submit">Sign in <span>↗</span></button>
+          <p class="form-status" data-login-status role="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="admin-dashboard" data-dashboard-view hidden>
+      <header class="admin-header">
+        <div><a class="admin-logo" href="/"><span></span>milan</a><p class="eyebrow">Operations dashboard</p></div>
+        <div class="header-tools"><span class="admin-identity" data-admin-identity></span><button class="button button-quiet" data-logout>Log out</button></div>
+      </header>
+      <div class="dashboard-heading">
+        <div><p class="eyebrow">Overview</p><h1>Keep Milan <em>moving.</em></h1></div>
+        <button class="button button-quiet" data-refresh>Refresh data</button>
+      </div>
+      <p class="form-status" data-dashboard-status role="status"></p>
+      <div class="metric-grid">
+        <article class="metric-card"><span>Tracked users</span><strong data-count="users">—</strong></article>
+        <article class="metric-card"><span>Total payments</span><strong data-count="payments">—</strong></article>
+        <article class="metric-card metric-pending"><span>Pending review</span><strong data-count="pending">—</strong></article>
+        <article class="metric-card metric-approved"><span>Approved</span><strong data-count="approved">—</strong></article>
+        <article class="metric-card metric-rejected"><span>Rejected</span><strong data-count="rejected">—</strong></article>
+      </div>
+      <section class="panel-card data-section">
+        <div class="section-heading"><div><p class="eyebrow">Members</p><h2>Recent users</h2></div><span class="table-note">Last 500 tracked profiles</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Age</th><th>Location</th><th>Interest</th><th>Last seen</th></tr></thead><tbody data-users-body></tbody></table></div>
+      </section>
+      <section class="panel-card data-section">
+        <div class="section-heading"><div><p class="eyebrow">Payments</p><h2>Verification queue</h2></div><span class="table-note">Screenshots stay on the server</span></div>
+        <div class="table-wrap"><table><thead><tr><th>User</th><th>Plan</th><th>UTR</th><th>Screenshot</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead><tbody data-payments-body></tbody></table></div>
+      </section>
+    </section>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>
